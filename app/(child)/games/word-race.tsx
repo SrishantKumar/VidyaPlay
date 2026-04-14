@@ -172,12 +172,13 @@ export default function WordRaceScreen() {
       />
 
       {/* Game UI Layer */}
-      <View className="flex-1 px-6 pt-8 pb-12 justify-between">
+      <View className="flex-1 px-6 pt-4 pb-8 justify-between bg-slate-50">
         {/* Question Area */}
         <Animated.View 
           entering={FadeInDown} 
           key={currentQuestionIndex}
-          className="bg-white rounded-[40px] p-8 shadow-xl border-4 border-slate-100"
+          style={{ borderRadius: 40 }}
+          className="bg-white p-8 shadow-xl border-4 border-slate-100"
         >
           <Text className="text-child-primary font-black uppercase tracking-widest text-xs mb-3">
             Question {currentQuestionIndex + 1}

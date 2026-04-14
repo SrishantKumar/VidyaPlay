@@ -89,7 +89,8 @@ export default function ResultScreen() {
         {/* Stats Card */}
         <Animated.View 
           entering={FadeInUp.delay(1400)}
-          className="bg-white/50 w-full rounded-[40px] p-8 border-4 border-slate-100 mb-12"
+          style={{ borderRadius: 40 }}
+          className="bg-white/50 w-full p-8 border-4 border-slate-100 mb-12"
         >
           <View className="flex-row justify-around">
             <View className="items-center">

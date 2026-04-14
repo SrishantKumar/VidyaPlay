@@ -38,8 +38,8 @@ export default function ChildHomeScreen() {
 
       {/* Points Card */}
       <View 
-        className="bg-child-primary rounded-[40px] p-8 mb-10 shadow"
-        style={{ borderBottomWidth: 8, borderBottomColor: 'rgba(0,0,0,0.1)' }}
+        style={{ borderRadius: 40, borderBottomWidth: 8, borderBottomColor: 'rgba(0,0,0,0.1)' }}
+        className="bg-child-primary p-8 mb-10 shadow"
       >
         <View className="flex-row justify-between items-start mb-6">
           <View>
@@ -72,7 +72,7 @@ export default function ChildHomeScreen() {
           <Icons name="activity" size={20} color="#64748B" />
         </View>
         
-        <View className="flex-row justify-between items-center bg-white p-6 rounded-[32px] shadow border border-slate-50">
+        <View style={{ borderRadius: 32 }} className="flex-row justify-between items-center bg-white p-6 shadow border border-slate-50">
           {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => {
             const isCompleted = i < 3;
             const isToday = i === 3;
@@ -101,11 +101,11 @@ export default function ChildHomeScreen() {
 
       {/* Quick Stats */}
       <View className="flex-row gap-4 mb-10">
-        <View className="flex-1 bg-white rounded-[32px] p-6 shadow border border-slate-50">
+        <View style={{ borderRadius: 32 }} className="flex-1 bg-white p-6 shadow border border-slate-50">
           <Text className="text-text-secondary text-[10px] font-black uppercase tracking-widest mb-1">Time Today</Text>
           <Text className="text-2xl font-black text-text-primary">45 min</Text>
         </View>
-        <View className="flex-1 bg-white rounded-[32px] p-6 shadow border border-slate-50">
+        <View style={{ borderRadius: 32 }} className="flex-1 bg-white p-6 shadow border border-slate-50">
           <Text className="text-child-accent text-[10px] font-black uppercase tracking-widest mb-1">Goal</Text>
           <Text className="text-2xl font-black text-child-accent">60 min</Text>
         </View>
@@ -123,7 +123,8 @@ export default function ChildHomeScreen() {
           {mockActivity.map((activity) => (
             <Pressable 
               key={activity.id}
-              className="bg-white rounded-[32px] p-5 shadow border border-slate-50 flex-row items-center active:scale-[0.98]"
+              style={{ borderRadius: 32 }}
+              className="bg-white p-5 shadow border border-slate-50 flex-row items-center active:scale-[0.98]"
             >
               <View className="bg-child-primary/10 p-4 rounded-2xl mr-4">
                  <Icons name="zap" size={24} color="#FF5722" />

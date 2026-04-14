@@ -22,8 +22,8 @@ export default function ProfileScreen() {
       {/* Profile Header */}
       <View className="items-center mb-10 mt-4">
         <View className="relative">
-          <View className="bg-white rounded-[40px] p-2 shadow">
-            <View className="bg-child-surface rounded-[32px] w-32 h-32 items-center justify-center overflow-hidden">
+          <View style={{ borderRadius: 40 }} className="bg-white p-2 shadow">
+            <View style={{ borderRadius: 32 }} className="bg-child-surface w-32 h-32 items-center justify-center overflow-hidden">
                <Icons name="user" size={80} color="#1A237E" />
             </View>
           </View>
@@ -46,13 +46,13 @@ export default function ProfileScreen() {
 
       {/* Stats Row */}
       <View className="flex-row gap-4 mb-10">
-        <View className="flex-1 bg-white rounded-4xl p-6 shadow items-center border border-slate-50">
+        <View style={{ borderRadius: 32 }} className="flex-1 bg-white p-6 shadow items-center border border-slate-50">
           <Text className="text-text-secondary text-xs font-black uppercase tracking-widest mb-1">Points</Text>
           <Text className="text-3xl font-black text-child-primary">
             {mockChild.rewardPoints}
           </Text>
         </View>
-        <View className="flex-1 bg-white rounded-4xl p-6 shadow items-center border border-slate-50">
+        <View style={{ borderRadius: 32 }} className="flex-1 bg-white p-6 shadow items-center border border-slate-50">
           <Text className="text-text-secondary text-xs font-black uppercase tracking-widest mb-1">Badges</Text>
           <Text className="text-3xl font-black text-child-accent">
             {mockChild.levelBadges.length}

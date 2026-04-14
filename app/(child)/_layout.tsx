@@ -1,15 +1,23 @@
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import { View, Platform, Text } from "react-native";
 import { Feather as Icons } from "@expo/vector-icons";
 import { cn } from "@/lib/utils";
 
 // Tabs layout for the child section
 export default function ChildTabsLayout() {
+  const pathname = usePathname();
+  
+  // Hide tab bar for game screens for immersion
+  const isGameActive = pathname.includes("/games/word-race") || 
+                       pathname.includes("/games/math-jump") || 
+                       pathname.includes("/games/result");
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
+          display: isGameActive ? "none" : "flex",
           backgroundColor: "#FFFFFF",
           borderTopWidth: 0,
           height: Platform.OS === "ios" ? 100 : 80,
@@ -18,10 +26,8 @@ export default function ChildTabsLayout() {
           borderRadius: 40,
           position: "absolute",
           bottom: Platform.OS === "web" ? 20 : 0,
-          left: Platform.OS === "web" ? "25%" : 0,
-          right: Platform.OS === "web" ? "25%" : 0,
-          maxWidth: Platform.OS === "web" ? 480 : "100%",
-          // Using standard shadow props for cross-platform support
+          left: 0,
+          right: 0,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.05,
@@ -47,14 +53,18 @@ export default function ChildTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="games/index"
+        name="games"
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <View className={cn("items-center", focused && "scale-110")}>
-              <Icons name="play-circle" size={28} color={color} />
-              <Text className={cn("text-[10px] font-black uppercase mt-1", focused ? "text-child-primary" : "text-slate-400")}>
-                Games
-              </Text>
+            <View 
+              style={{ borderRadius: 20 }}
+              className={cn(
+                "p-3 items-center justify-center",
+                focused ? "bg-child-primary/10" : ""
+              )}
+            >
+              <Icons name="play-circle" size={26} color={color} />
             </View>
           ),
         }}

@@ -13,7 +13,7 @@ export default function SplashScreen() {
           <View className="flex-1 items-center justify-center px-8">
             {/* Logo Section */}
             <View className="items-center mb-12">
-              <View className="bg-white p-8 rounded-[48px] shadow mb-8">
+              <View className="bg-white p-8 shadow mb-8" style={{ borderRadius: 48 }}>
                 <Icons name="book-open" size={80} color="#FF5722" />
               </View>
               <Text className="text-6xl font-black text-child-primary tracking-tighter">

@@ -10,8 +10,8 @@ export default function RewardsScreen() {
       {/* Points Summary */}
       <View className="mb-10 pt-4">
         <View 
-          className="bg-child-primary rounded-[40px] p-8 shadow overflow-hidden"
-          style={{ borderBottomWidth: 8, borderBottomColor: 'rgba(0,0,0,0.1)' }}
+          style={{ borderRadius: 40, borderBottomWidth: 8, borderBottomColor: 'rgba(0,0,0,0.1)' }}
+          className="bg-child-primary p-8 shadow overflow-hidden"
         >
           <View className="flex-row justify-between items-center mb-4">
             <View className="bg-white/20 p-4 rounded-3xl">
@@ -44,7 +44,8 @@ export default function RewardsScreen() {
           {rewards.map((reward) => (
             <View 
               key={reward.id}
-              className="bg-white rounded-[32px] p-6 shadow border border-slate-50 flex-row items-center"
+              style={{ borderRadius: 32 }}
+              className="bg-white p-6 shadow border border-slate-50 flex-row items-center"
             >
               <View className="bg-child-primary/10 p-5 rounded-3xl mr-5">
                 <Icons name="box" size={30} color="#FF5722" />

@@ -51,11 +51,12 @@ export const GameCard: React.FC<GameCardProps> = ({
     <Pressable
       onPress={onPress}
       className={cn(
-        "flex-1 rounded-4xl overflow-hidden mb-6 mr-4 active:scale-95 transition-transform",
+        "flex-1 overflow-hidden mb-6 mr-4 active:scale-95 transition-transform",
         Platform.OS === "web" && "shadow"
       )}
       style={{ 
         backgroundColor: color,
+        borderRadius: 32,
         borderBottomWidth: 6,
         borderBottomColor: 'rgba(0,0,0,0.15)'
       }}
