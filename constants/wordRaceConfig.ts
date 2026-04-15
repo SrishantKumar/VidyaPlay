@@ -24,19 +24,20 @@ export const WORD_RACE_CONFIG = {
 
   // Race positions — horizontal X coordinates
   PLAYER_X: 60,
-  RIVAL_START_OFFSET: 180,
+  RIVAL_START_OFFSET: 140, // Closer start
 
   // Physics
   PHYSICS: {
     BOOST_DISTANCE: 140,
-    RIVAL_FALLBACK: 75,
-    RIVAL_ADVANCE: 55,
-    RIVAL_DRIFT_PER_FRAME: 0.25,
-    SPRING_STIFFNESS: 80,
-    SPRING_DAMPING: 15,
-    MAX_POSITION: 450,
+    RIVAL_FALLBACK: 120,    // Bigger fallback
+    RIVAL_ADVANCE: 80,
+    RIVAL_DRIFT_PER_FRAME: 0.35,
+    SPRING_STIFFNESS: 60,   // Softer spring for smoother transition
+    SPRING_DAMPING: 18,
+    MAX_POSITION: 400,
     MIN_POSITION: -100,
   },
+
 
   // Timing (ms)
   BOOST_DURATION: 1400,

@@ -4,6 +4,7 @@ import {
   Canvas,
   Skia,
 } from '@shopify/react-native-skia';
+import { useSharedValue, useFrameCallback, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
 import { Road, Car, Exhaust, SpeedLines } from './wordRace/SkiaComponents';
 import { useRacePhysics } from './wordRace/RacePhysics';
 import { ParticleSystem } from './wordRace/ParticleSystem';
@@ -16,15 +17,18 @@ export interface WordRaceCanvasProps {
   carState?: CarState;
   questionText?: string;
   isSignVisible?: boolean;
+  onRankingChange?: (rank: number) => void;
 }
 
 export const WordRaceCanvas: React.FC<WordRaceCanvasProps> = ({
   carState = 'normal',
+  onRankingChange,
 }) => {
   const { width: CANVAS_W, height: windowH } = useWindowDimensions();
   const CANVAS_H = windowH * CANVAS_HEIGHT_RATIO;
   const [skiaReady, setSkiaReady] = useState(Platform.OS !== 'web');
   
+  // ... (keep useEffect for Skia ready)
   useEffect(() => {
     if (Platform.OS === 'web') {
       const checkSkia = () => {
@@ -38,15 +42,29 @@ export const WordRaceCanvas: React.FC<WordRaceCanvasProps> = ({
   }, []);
 
   const physics = useRacePhysics();
-  const [roadScroll, setRoadScroll] = useState(0);
+  const roadScroll = useSharedValue(0);
+  
   const playerFx = useRef(new ParticleSystem());
   const rival0Fx = useRef(new ParticleSystem());
   const rival1Fx = useRef(new ParticleSystem());
+  
   const [playerPfx, setPlayerPfx] = useState<any[]>([]);
   const [rival0Pfx, setRival0Pfx] = useState<any[]>([]);
   const [rival1Pfx, setRival1Pfx] = useState<any[]>([]);
-  const [rival0Pos, setRival0Pos] = useState(PLAYER_X + WORD_RACE_CONFIG.RIVAL_START_OFFSET);
-  const [rival1Pos, setRival1Pos] = useState(PLAYER_X + WORD_RACE_CONFIG.RIVAL_START_OFFSET + 40);
+
+  // Sync ranking to parent
+  useAnimatedReaction(
+    () => physics.ranking.value,
+    (current, prev) => {
+      if (current !== prev && onRankingChange) {
+        runOnJS(onRankingChange)(current);
+      }
+    }
+  );
+
+  // Use refs for values needed in frame callback
+  const carStateRef = useRef<CarState>(carState);
+  useEffect(() => { carStateRef.current = carState; }, [carState]);
 
   const prevCarState = useRef<CarState>('normal');
   useEffect(() => {
@@ -57,38 +75,44 @@ export const WordRaceCanvas: React.FC<WordRaceCanvasProps> = ({
     else if (carState === 'slowing') physics.onWrongAnswer();
   }, [carState]);
 
-  const rafRef = useRef<number | null>(null);
-  const frameCountRef = useRef(0);
-
-  const tick = useCallback(() => {
-    frameCountRef.current += 1;
-    const speed = carState === 'turbo' ? 14 : carState === 'boosting' ? 10 : 6;
-    setRoadScroll(prev => prev + speed);
+  const updateGameLogic = useCallback((timestamp: number) => {
+    const currentCarState = carStateRef.current;
+    const isBoosting = currentCarState === 'boosting' || currentCarState === 'turbo';
+    
+    // Apply drift
     physics.applyDrift();
-    if (frameCountRef.current % 2 === 0) {
-      const isBoosting = carState === 'boosting' || carState === 'turbo';
-      playerFx.current.emit(PLAYER_X, LANES.MIDDLE - 5, 10, isBoosting);
-      rival0Fx.current.emit(physics.rival0X.value, LANES.TOP - 5, 10, false);
-      rival1Fx.current.emit(physics.rival1X.value, LANES.BOTTOM - 5, 10, false);
+
+    // Emit and update particles
+    if (Math.floor(timestamp / 16) % 2 === 0) {
+      playerFx.current.emit(physics.playerX.value, LANES.MIDDLE, 10, isBoosting);
+      rival0Fx.current.emit(physics.rival0X.value, LANES.TOP, 10, false);
+      rival1Fx.current.emit(physics.rival1X.value, LANES.BOTTOM, 10, false);
+      
       playerFx.current.update();
       rival0Fx.current.update();
       rival1Fx.current.update();
+      
       setPlayerPfx([...playerFx.current.getParticles()]);
       setRival0Pfx([...rival0Fx.current.getParticles()]);
       setRival1Pfx([...rival1Fx.current.getParticles()]);
     }
-    setRival0Pos(physics.rival0X.value);
-    setRival1Pos(physics.rival1X.value);
-    rafRef.current = requestAnimationFrame(tick);
-  }, [carState]);
+  }, [physics]);
 
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [tick]);
+  useFrameCallback((frameInfo) => {
+    if (!frameInfo.timeSinceFirstFrame) return;
+    
+    const currentCarState = carStateRef.current;
+    const speed = currentCarState === 'turbo' ? 22 : currentCarState === 'boosting' ? 14 : 7;
+    
+    // Update road scroll
+    roadScroll.value = roadScroll.value + speed;
+    
+    // Update logic on JS
+    runOnJS(updateGameLogic)(frameInfo.timestamp);
+  });
 
-  const speedOpacity = carState === 'turbo' ? 0.8 : carState === 'boosting' ? 0.4 : 0;
   const playerIsBoosting = carState === 'boosting' || carState === 'turbo';
+  const speedOpacity = carState === 'turbo' ? 0.9 : carState === 'boosting' ? 0.5 : 0;
 
   if (!skiaReady) {
     return <View style={{ width: CANVAS_W, height: CANVAS_H, backgroundColor: COLORS.SKY }} />;
@@ -99,15 +123,19 @@ export const WordRaceCanvas: React.FC<WordRaceCanvasProps> = ({
       <Canvas style={{ width: CANVAS_W, height: CANVAS_H }}>
         <Road width={CANVAS_W} height={CANVAS_H} scrollOffset={roadScroll} />
         <SpeedLines canvasWidth={CANVAS_W} canvasHeight={CANVAS_H} opacity={speedOpacity} />
+        
         <Exhaust particles={rival0Pfx} />
         <Exhaust particles={rival1Pfx} />
         <Exhaust particles={playerPfx} />
-        <Car x={rival0Pos} laneCenterY={LANES.TOP} color={COLORS.RIVAL_1_CAR} isBoosting={false} />
-        <Car x={rival1Pos} laneCenterY={LANES.BOTTOM} color={COLORS.RIVAL_2_CAR} isBoosting={false} />
-        <Car x={PLAYER_X} laneCenterY={LANES.MIDDLE} color={COLORS.PLAYER_CAR} isBoosting={playerIsBoosting} isTurbo={carState === 'turbo'} />
+        
+        <Car x={physics.rival0X} laneCenterY={LANES.TOP} color={COLORS.RIVAL_1_CAR} isBoosting={false} />
+        <Car x={physics.rival1X} laneCenterY={LANES.BOTTOM} color={COLORS.RIVAL_2_CAR} isBoosting={false} />
+        <Car x={physics.playerX} laneCenterY={LANES.MIDDLE} color={COLORS.PLAYER_CAR} isBoosting={playerIsBoosting} isTurbo={carState === 'turbo'} />
       </Canvas>
     </View>
   );
 };
 
+
 export default WordRaceCanvas;
+

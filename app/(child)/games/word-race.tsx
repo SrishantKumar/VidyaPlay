@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, SafeAreaView, Dimensions, Platform } from "react-native";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { View, Text, Pressable, SafeAreaView, Dimensions, Platform, StatusBar } from "react-native";
+
 import { useRouter } from "expo-router";
 import Animated, { 
   FadeInDown, 
@@ -88,25 +89,46 @@ export default function WordRaceScreen() {
     }, 1800);
   };
 
+  const [ranking, setRanking] = useState(1);
+  const startTime = useRef(Date.now());
+
+  // ... (keep useEffect for countdown, startGame, etc.)
+  
   const handleGameOver = () => {
-    // Drive car off screen delay
+    const totalTime = Math.round((Date.now() - startTime.current) / 1000);
+    const finalRank = ranking;
+    
+    // Mock rival times relative to player
+    const rival1Time = totalTime + (finalRank === 1 ? 2 : finalRank === 2 ? -1 : -3);
+    const rival2Time = totalTime + (finalRank === 1 ? 4 : finalRank === 2 ? 1 : -2);
+
     setTimeout(() => {
       router.push({
         pathname: "/(child)/games/result",
         params: {
+          gameType: "word-race",
           score,
           coins,
           accuracy: Math.round((useGameStore.getState().correctCount / questions.length) * 100),
-          stars: useGameStore.getState().correctCount >= 8 ? 3 : useGameStore.getState().correctCount >= 5 ? 2 : 1
+          stars: finalRank === 1 ? 3 : finalRank === 2 ? 2 : 1,
+          timeTaken: totalTime,
+          rank: finalRank,
+          rivalTimes: JSON.stringify([rival1Time, rival2Time]),
         }
       });
-    }, 400);
+    }, 800);
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getRankSuffix = (r: number) => {
+    if (r === 1) return "st";
+    if (r === 2) return "nd";
+    return "rd";
   };
 
   if (showCountdown) {
@@ -127,63 +149,85 @@ export default function WordRaceScreen() {
   const currentQ = questions[currentQuestionIndex];
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-slate-900">
+      <StatusBar barStyle="light-content" />
       {/* HUD Bar */}
-      <SafeAreaView className="bg-slate-900 pb-2">
-        <View className="flex-row justify-between items-center px-6 py-2">
-          <View className="flex-row items-center gap-3">
-             <View className="bg-child-primary p-2 rounded-xl">
-               <Icons name="zap" size={20} color="white" />
-             </View>
+      <SafeAreaView className="bg-slate-900/80">
+        <View className="flex-row justify-between items-center px-6 py-4">
+          <View className="flex-row items-center gap-4">
+             <Pressable onPress={() => router.back()} className="w-10 h-10 items-center justify-center bg-white/10 rounded-xl">
+               <Icons name="arrow-left" size={20} color="white" />
+             </Pressable>
              <View>
-               <Text className="text-white/60 text-[10px] font-black uppercase">Streak</Text>
-               <Text className="text-white font-black text-lg">{streak}</Text>
+               <Text className="text-white/40 text-[10px] font-black uppercase tracking-widest">Streak</Text>
+               <View className="flex-row items-center gap-1">
+                 <Icons name="zap" size={14} color="#FFD700" />
+                 <Text className="text-white font-black text-xl">{streak}</Text>
+               </View>
              </View>
           </View>
           
-          <View className="items-center">
-            <Text className="text-white/60 text-[10px] font-black uppercase">Progress</Text>
-            <View className="flex-row gap-1 mt-1">
-              {questions.map((_: any, i: number) => (
-                <View 
-                  key={i} 
-                  className={cn(
-                    "w-3 h-1.5 rounded-full",
-                    i < currentQuestionIndex ? "bg-child-success" : 
-                    i === currentQuestionIndex ? "bg-child-primary w-6" : "bg-white/20"
-                  )} 
+          <View className="items-center flex-1 mx-4">
+             <View className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-1">
+                <Animated.View 
+                  className="h-full bg-child-primary"
+                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                 />
-              ))}
-            </View>
+             </View>
+             <Text className="text-white/40 text-[9px] font-black uppercase">Race Progress</Text>
           </View>
 
           <View className="items-end">
-            <Text className="text-white/60 text-[10px] font-black uppercase">Time</Text>
-            <Text className="text-white font-black text-lg">{formatTime(timeLeft)}</Text>
+            <Text className="text-white/40 text-[10px] font-black uppercase tracking-widest">Position</Text>
+            <View className="flex-row items-baseline">
+              <Text className="text-child-primary font-black text-2xl">{ranking}</Text>
+              <Text className="text-child-primary/60 font-black text-sm">{getRankSuffix(ranking)}</Text>
+            </View>
           </View>
         </View>
       </SafeAreaView>
 
       {/* Skia Canvas Area */}
-      <WordRaceCanvas 
-        carState={carState} 
-        questionText={currentQ?.question || ""}
-        isSignVisible={!feedback}
-      />
+      <View className="border-y-4 border-slate-800">
+        <WordRaceCanvas 
+          carState={carState} 
+          questionText={currentQ?.question || ""}
+          isSignVisible={!feedback}
+          onRankingChange={setRanking}
+        />
+
+        
+        {/* Nitro Meter Overlay */}
+        <View className="absolute bottom-4 left-6 bg-black/40 px-3 py-1 rounded-full border border-white/10 flex-row items-center gap-2">
+           <View className="flex-row gap-0.5">
+              {[1, 2, 3].map(i => (
+                <View 
+                  key={i} 
+                  className={cn(
+                    "w-4 h-1.5 rounded-sm",
+                    streak >= i ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : "bg-white/20"
+                  )} 
+                />
+              ))}
+           </View>
+           <Text className="text-[9px] text-white/60 font-black uppercase">Nitro</Text>
+        </View>
+      </View>
 
       {/* Game UI Layer */}
-      <View className="flex-1 px-6 pt-4 pb-8 justify-between bg-slate-50">
+      <View className="flex-1 px-6 pt-6 pb-10 justify-between bg-slate-50 rounded-t-[40px] -mt-6">
         {/* Question Area */}
         <Animated.View 
           entering={FadeInDown} 
           key={currentQuestionIndex}
-          style={{ borderRadius: 40 }}
-          className="bg-white p-8 shadow-xl border-4 border-slate-100"
+          className="bg-white p-8 rounded-[32px] shadow-2xl border-2 border-slate-100 items-center"
         >
-          <Text className="text-child-primary font-black uppercase tracking-widest text-xs mb-3">
-            Question {currentQuestionIndex + 1}
-          </Text>
-          <Text className="text-3xl font-black text-slate-800 leading-tight">
+          <View className="bg-child-primary/10 px-4 py-1 rounded-full mb-4">
+            <Text className="text-child-primary font-black uppercase text-[10px] tracking-widest">
+              Level {currentQuestionIndex + 1}
+            </Text>
+          </View>
+          <Text className="text-3xl font-black text-slate-800 leading-tight text-center">
             {currentQ?.question}
           </Text>
         </Animated.View>
@@ -202,27 +246,32 @@ export default function WordRaceScreen() {
                 onPress={() => handleAnswer(option)}
                 disabled={isAnswerLocked}
                 className={cn(
-                  "h-16 rounded-3xl flex-row items-center px-6 border-b-4 active:scale-95 transition-all shadow-md",
+                  "h-18 rounded-3xl flex-row items-center px-6 border-b-[6px] active:scale-[0.98] transition-all",
                   !feedback && "bg-white border-slate-200",
                   isCorrect && "bg-child-success border-green-700",
                   isWrong && "bg-child-danger border-red-700",
-                  showCorrectAnswer && "bg-child-success/20 border-child-success"
+                  showCorrectAnswer && "bg-child-success/10 border-child-success"
                 )}
               >
                 <View className={cn(
-                  "w-8 h-8 rounded-full items-center justify-center mr-4",
-                  !feedback ? "bg-slate-100" : "bg-white"
+                  "w-10 h-10 rounded-2xl items-center justify-center mr-4 shadow-sm",
+                  !feedback ? "bg-slate-50" : "bg-white/20"
                 )}>
-                  {isCorrect ? <Icons name="check" size={18} color="#4CAF50" /> :
-                   isWrong ? <Icons name="x" size={18} color="#F44336" /> :
-                   <Text className="font-black text-slate-400">{String.fromCharCode(65 + i)}</Text>}
+                  {isCorrect ? <Icons name="check" size={20} color="white" /> :
+                   isWrong ? <Icons name="x" size={20} color="white" /> :
+                   <Text className="font-black text-slate-400 text-lg">{String.fromCharCode(65 + i)}</Text>}
                 </View>
                 <Text className={cn(
-                  "text-xl font-black",
+                  "text-xl font-black flex-1",
                   (isCorrect || isWrong) ? "text-white" : "text-slate-700"
                 )}>
                   {option}
                 </Text>
+                {isCorrect && (
+                  <Animated.View entering={ZoomIn}>
+                    <Icons name="zap" size={20} color="white" />
+                  </Animated.View>
+                )}
               </Pressable>
             );
           })}
@@ -232,9 +281,13 @@ export default function WordRaceScreen() {
       {/* Turbo Overlay */}
       {carState === 'turbo' && (
         <Animated.View 
-          entering={ZoomIn}
-          className="absolute inset-0 pointer-events-none border-[12px] border-child-accent opacity-30"
-        />
+          entering={ZoomIn.duration(300)}
+          className="absolute inset-0 pointer-events-none border-[16px] border-yellow-400/20"
+        >
+          <View className="flex-1 items-center justify-center">
+             <Text className="text-yellow-400 font-black text-8xl opacity-10 rotate-12">TURBO</Text>
+          </View>
+        </Animated.View>
       )}
     </View>
   );
