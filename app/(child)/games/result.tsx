@@ -1,168 +1,164 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, SafeAreaView, Dimensions, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import Animated, { 
-  FadeInUp, 
-  FadeInDown, 
-  ZoomIn, 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withDelay, 
-  withSequence,
-  withTiming,
-  Easing
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
 } from "react-native-reanimated";
 import { Feather as Icons } from "@expo/vector-icons";
-import { ChildLayout } from "@/components/layouts/ChildLayout";
-import { ChildButton } from "@/components/buttons/ChildButton";
-import { cn } from "@/lib/utils";
-
-const { width } = Dimensions.get("window");
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ResultScreen() {
   const router = useRouter();
   const { score, coins, accuracy, stars, gameType, timeTaken, rank, rivalTimes } = useLocalSearchParams();
-  
+
   const [displayCoins, setDisplayCoins] = useState(0);
   const rivals = rivalTimes ? JSON.parse(rivalTimes as string) : [];
+  const starCount = Number(stars) || 0;
+  const isRace = gameType === "word-race";
 
-  useEffect(() => {
-    // Star animations logic
-    const starCount = Number(stars) || 0;
-    star1Scale.value = withDelay(600, withSpring(1, { damping: 12 }));
-    if (starCount >= 2) star2Scale.value = withDelay(900, withSpring(1, { damping: 12 }));
-    if (starCount >= 3) star3Scale.value = withDelay(1200, withSpring(1, { damping: 12 }));
-
-    const targetCoins = Number(coins) || 0;
-    const interval = setInterval(() => {
-      setDisplayCoins(prev => {
-        if (prev >= targetCoins) { clearInterval(interval); return targetCoins; }
-        return prev + Math.ceil(targetCoins / 20);
-      });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [stars, coins]);
-
-  // Shared shared values
   const star1Scale = useSharedValue(0);
   const star2Scale = useSharedValue(0);
   const star3Scale = useSharedValue(0);
 
-  const isRace = gameType === 'word-race';
+  const star1Style = useAnimatedStyle(() => ({ transform: [{ scale: star1Scale.value }] }));
+  const star2Style = useAnimatedStyle(() => ({ transform: [{ scale: star2Scale.value }], marginTop: -20 }));
+  const star3Style = useAnimatedStyle(() => ({ transform: [{ scale: star3Scale.value }] }));
+
+  useEffect(() => {
+    star1Scale.value = withDelay(500, withSpring(1, { damping: 8, stiffness: 180 }));
+    if (starCount >= 2) star2Scale.value = withDelay(800, withSpring(1, { damping: 8, stiffness: 180 }));
+    if (starCount >= 3) star3Scale.value = withDelay(1100, withSpring(1, { damping: 8, stiffness: 180 }));
+
+    const target = Number(coins) || 0;
+    const iv = setInterval(() => {
+      setDisplayCoins((p) => { if (p >= target) { clearInterval(iv); return target; } return p + Math.ceil(target / 20); });
+    }, 50);
+    return () => clearInterval(iv);
+  }, []);
+
+  const perf = starCount === 3 ? "PERFECT!" : starCount === 2 ? "GREAT JOB!" : "KEEP GOING!";
+  const perfColor = starCount === 3 ? "#22C55E" : starCount === 2 ? "#FF6B35" : "#1B4FE4";
 
   return (
-    <ChildLayout scrollable={true}>
-      <View className="flex-1 justify-center items-center py-6 px-4">
-        
-        {/* Title Section */}
-        <Animated.View entering={FadeInDown.delay(200)} className="items-center mb-6">
-          <Text className="text-sm font-black text-child-primary uppercase tracking-[5px] mb-2">
-            Game Over
-          </Text>
-          <Text className="text-5xl font-black text-slate-800 tracking-tighter text-center">
-            {isRace && rank === '1' ? "CHAMPION!" : "WELL DONE!"}
-          </Text>
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]}>
+        <View style={styles.header}>
+          <Text style={styles.headerLabel}>RACE COMPLETE</Text>
+        </View>
+      </SafeAreaView>
+
+      <View style={styles.center}>
+        {/* Performance */}
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.perfSection}>
+          <Text style={[styles.perfText, { color: perfColor }]}>{perf}</Text>
         </Animated.View>
 
-        {/* Victory Stars */}
-        <View className="flex-row gap-6 mb-8">
-           <Animated.View style={[{ transform: [{ scale: star1Scale }] }]}>
-            <Icons name="star" size={60} color="#FFD600" />
+        {/* Stars */}
+        <View style={styles.starsRow}>
+          <Animated.View style={star1Style}>
+            <Icons name="star" size={52} color={starCount >= 1 ? "#facc15" : "#1e293b"} />
           </Animated.View>
-          <Animated.View style={[{ transform: [{ scale: star2Scale }], marginTop: -20 }]}>
-            <Icons name="star" size={80} color="#FFD600" />
+          <Animated.View style={star2Style}>
+            <Icons name="star" size={68} color={starCount >= 2 ? "#facc15" : "#1e293b"} />
           </Animated.View>
-          <Animated.View style={[{ transform: [{ scale: star3Scale }] }]}>
-            <Icons name="star" size={60} color="#FFD600" />
+          <Animated.View style={star3Style}>
+            <Icons name="star" size={52} color={starCount >= 3 ? "#facc15" : "#1e293b"} />
           </Animated.View>
         </View>
 
+        {/* Race Leaderboard */}
         {isRace && (
-          <Animated.View 
-            entering={FadeInUp.delay(1000)}
-            className="bg-slate-900 w-full p-6 rounded-[32px] mb-6 border-4 border-slate-800 shadow-xl"
-          >
-            <Text className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-4">Race Leaderboard</Text>
-            
-            {/* Player Place */}
-            <View className={cn("flex-row items-center justify-between p-4 rounded-2xl mb-2", rank === '1' ? "bg-child-primary/20 border-2 border-child-primary" : "bg-white/5")}>
-              <View className="flex-row items-center gap-3">
-                <View className="w-8 h-8 rounded-full bg-child-primary items-center justify-center">
-                  <Text className="text-white font-black">{rank}</Text>
-                </View>
-                <Text className="text-white font-black text-lg">YOU</Text>
-              </View>
-              <Text className="text-white font-black text-xl">{timeTaken}s</Text>
+          <Animated.View entering={FadeInUp.delay(700)} style={styles.leaderboard}>
+            <Text style={styles.lbTitle}>RACE LEADERBOARD</Text>
+            <View style={[styles.lbRow, rank === "1" && styles.lbRowHighlight]}>
+              <View style={styles.lbBadge}><Text style={styles.lbBadgeText}>{rank}</Text></View>
+              <Text style={styles.lbName}>YOU</Text>
+              <Text style={styles.lbTime}>{timeTaken}s</Text>
             </View>
-
-            {/* Rivals */}
-            {rivals.map((time: number, i: number) => {
-               const rRank = time < Number(timeTaken) ? (i === 0 ? 1 : 2) : (i === 0 ? 2 : 3);
-               // Simple mock ranking logic for display
-               return (
-                <View key={i} className="flex-row items-center justify-between p-4 bg-white/5 rounded-2xl mb-1 opacity-60">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-6 h-6 rounded-full bg-slate-700 items-center justify-center">
-                      <Text className="text-white/60 font-black text-xs">{i + 2}</Text>
-                    </View>
-                    <Text className="text-white/60 font-black">Rival {i + 1}</Text>
-                  </View>
-                  <Text className="text-white/60 font-black">{time}s</Text>
-                </View>
-               );
-            })}
+            {rivals.map((time: number, i: number) => (
+              <View key={i} style={styles.lbRowRival}>
+                <View style={styles.lbBadgeGray}><Text style={styles.lbBadgeGrayText}>{i + 2}</Text></View>
+                <Text style={styles.lbRivalName}>Rival {i + 1}</Text>
+                <Text style={styles.lbRivalTime}>{time}s</Text>
+              </View>
+            ))}
           </Animated.View>
         )}
 
-        {/* Stats Card */}
-        <Animated.View 
-          entering={FadeInUp.delay(isRace ? 1500 : 1200)}
-          style={{ borderRadius: 40 }}
-          className="bg-white p-8 border-4 border-slate-100 mb-8 w-full"
-        >
-          <View className="flex-row justify-around">
-            <View className="items-center">
-               <View className="bg-child-primary/10 p-3 rounded-2xl mb-1">
-                 <Icons name="award" size={24} color="#FF5722" />
-               </View>
-               <Text className="text-xl font-black text-slate-800">{score}</Text>
-               <Text className="text-slate-400 text-[9px] font-black uppercase">Points</Text>
+        {/* Stats */}
+        <Animated.View entering={FadeInUp.delay(isRace ? 1100 : 700)} style={styles.statsRow}>
+          {[
+            { icon: "award" as const,  val: String(score),       label: "Points",   color: "#FF6B35" },
+            { icon: "zap" as const,    val: `${accuracy}%`,       label: "Accuracy", color: "#1B4FE4" },
+            { icon: "gift" as const,   val: `+${displayCoins}`,   label: "Coins",    color: "#22C55E" },
+          ].map((s, i) => (
+            <View key={i} style={styles.statCard}>
+              <Icons name={s.icon} size={20} color={s.color} />
+              <Text style={[styles.statVal, { color: s.color }]}>{s.val}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
             </View>
-            <View className="items-center">
-               <View className="bg-child-accent/10 p-3 rounded-2xl mb-1">
-                 <Icons name="zap" size={24} color="#FFD600" />
-               </View>
-               <Text className="text-xl font-black text-slate-800">{accuracy}%</Text>
-               <Text className="text-slate-400 text-[9px] font-black uppercase">Accuracy</Text>
-            </View>
-            <View className="items-center">
-               <View className="bg-child-success/10 p-3 rounded-2xl mb-1">
-                 <Icons name="gift" size={24} color="#4CAF50" />
-               </View>
-               <Text className="text-xl font-black text-slate-800">+{displayCoins}</Text>
-               <Text className="text-slate-400 text-[9px] font-black uppercase">Coins</Text>
-            </View>
-          </View>
+          ))}
         </Animated.View>
 
         {/* Buttons */}
-        <View className="w-full gap-4">
-           <ChildButton
-              title="Play Again"
-              onPress={() => router.replace(isRace ? "/(child)/games/word-race" : "/(child)/games/math-jump")}
-              variant="primary"
-              size="large"
-           />
-           <ChildButton
-              title="Back to Home"
-              onPress={() => router.replace("/(child)/home")}
-              variant="outline"
-              size="large"
-           />
-        </View>
+        <Animated.View entering={FadeInUp.delay(isRace ? 1300 : 900)} style={styles.btns}>
+          <Pressable
+            onPress={() => router.replace(isRace ? "/(child)/games/word-race" : "/(child)/games/math-jump")}
+            style={({ pressed }) => [styles.playBtn, pressed && styles.pressed]}
+          >
+            <Text style={styles.playBtnText}>Play Again</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.replace("/(child)/home")}
+            style={({ pressed }) => [styles.homeBtn, pressed && styles.pressed]}
+          >
+            <Text style={styles.homeBtnText}>Go Home</Text>
+          </Pressable>
+        </Animated.View>
       </View>
-    </ChildLayout>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#0F172A" },
+  header: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 },
+  headerLabel: { color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 4, textAlign: "center" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 20 },
+  // Performance
+  perfSection: { alignItems: "center" },
+  perfText: { fontSize: 32, fontWeight: "900", letterSpacing: -0.5, textAlign: "center" },
+  // Stars
+  starsRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  // Leaderboard
+  leaderboard: { width: "100%", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 24, padding: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
+  lbTitle: { color: "rgba(255,255,255,0.35)", fontSize: 9, fontWeight: "800", textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 },
+  lbRow: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 14, marginBottom: 8 },
+  lbRowHighlight: { backgroundColor: "rgba(249,115,22,0.15)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)" },
+  lbBadge: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#f97316", alignItems: "center", justifyContent: "center", marginRight: 12 },
+  lbBadgeText: { color: "white", fontWeight: "800", fontSize: 13 },
+  lbName: { flex: 1, color: "white", fontWeight: "800", fontSize: 16 },
+  lbTime: { color: "white", fontWeight: "800", fontSize: 18 },
+  lbRowRival: { flexDirection: "row", alignItems: "center", padding: 10, borderRadius: 12, marginBottom: 4, opacity: 0.55 },
+  lbBadgeGray: { width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center", marginRight: 12 },
+  lbBadgeGrayText: { color: "rgba(255,255,255,0.6)", fontWeight: "800", fontSize: 11 },
+  lbRivalName: { flex: 1, color: "rgba(255,255,255,0.6)", fontWeight: "700", fontSize: 14 },
+  lbRivalTime: { color: "rgba(255,255,255,0.6)", fontWeight: "700", fontSize: 14 },
+  // Stats
+  statsRow: { flexDirection: "row", width: "100%", gap: 12 },
+  statCard: { flex: 1, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 20, padding: 16, alignItems: "center", gap: 6, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
+  statVal: { fontSize: 20, fontWeight: "900" },
+  statLabel: { fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
+  // Buttons
+  btns: { width: "100%", gap: 12 },
+  playBtn: { backgroundColor: "#FF6B35", borderRadius: 20, height: 56, alignItems: "center", justifyContent: "center", shadowColor: "#FF6B35", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8 },
+  playBtnText: { color: "white", fontSize: 17, fontWeight: "800" },
+  homeBtn: { borderRadius: 20, height: 52, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: "rgba(249,115,22,0.5)" },
+  homeBtnText: { color: "#f97316", fontSize: 16, fontWeight: "700" },
+  pressed: { transform: [{ scale: 0.97 }] },
+});

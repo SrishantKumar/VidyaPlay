@@ -116,7 +116,7 @@ export default function MathJumpScreen() {
     return (
       <View className="flex-1 bg-child-primary items-center justify-center p-6">
         <Animated.View entering={ZoomIn} className="bg-white p-10 rounded-[40px] items-center w-full shadow-2xl">
-          <Text className="text-6xl mb-6">🏁</Text>
+          <Icons name="flag" size={56} color="#1A237E" style={{ marginBottom: 24 }} />
           <Text className="text-4xl font-black text-slate-800 mb-2">Game Over!</Text>
           <Text className="text-lg text-slate-500 mb-8 font-bold">You reached Level {level}</Text>
           
@@ -195,7 +195,7 @@ export default function MathJumpScreen() {
               {/* Character Area */}
               <View className="h-40 w-full items-center justify-end">
                   <Animated.View style={[jumpStyle]} className="items-center">
-                     <Text className="text-8xl">🐵</Text>
+                     <Icons name="user" size={72} color="#1A237E" />
                      {isCorrect === true && (
                        <Animated.View entering={FadeInUp} className="absolute -top-10 bg-green-500 px-4 py-1 rounded-full">
                           <Text className="text-white font-black">HOORAY!</Text>
